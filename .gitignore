@@ -1,0 +1,7 @@
+.idea/
+.ipynb_checkpoint/
+**/docs/
+**/*.zip
+**/*.pkl
+**/glove_embedding/
+**/data/
