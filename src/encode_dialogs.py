@@ -5,7 +5,7 @@ from utils.basic_utilities import *
 def main(logger_main: logging.Logger):
     logger = logger_main.getChild("main")
     logger.info("Starting encoding...")
-
+    logger.info("end of encoding.")
     return None
 
 
