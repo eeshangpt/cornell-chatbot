@@ -1,18 +1,12 @@
-import logging
 import pickle
-from os import getcwd, walk
-from os.path import join, isfile, dirname
+from os import walk
+from os.path import isfile
 from typing import List, Dict, Tuple
 
 import pandas as pd
 from tqdm import tqdm
 
-from utils.basic_utilities import get_config, end_line
-
-PROJECT_DIR = dirname(getcwd())
-DATA_DIR = join(PROJECT_DIR, 'data')
-DATA_SET_DIR = join(DATA_DIR, 'cornell movie-dialogs corpus')
-EMBEDDING_DIR = join(PROJECT_DIR, 'glove_embedding')
+from utils.basic_utilities import *
 
 ENCODING = 'iso-8859-1'  # Encoding for the Cornell Dataset.
 SEPERATOR = " +++$+++ "  # Seperator as specified in readme.
@@ -114,11 +108,11 @@ def __write_dialog_files(dialog: List, dialog_file_path: str, reply_dialog: List
     reply_file.close()
 
 
-def main():
+def read_data_and_create_dialog(logger_main: logging.Logger):
     """
     Driver.
     """
-    logger = logger_main.getChild("main")
+    logger = logger_main.getChild("read_data_and_create_dialog")
     logger.info("Reading the directory.")
     root, dirs, files = list(walk(DATA_SET_DIR))[0]
     logger.info("Separating the useful file.")
@@ -146,9 +140,4 @@ def main():
         logger.info("Creating dialog and reply file.")
         __write_dialog_files(dialog, dialog_file_path, reply_dialog, reply_file_path, logger)
 
-
-if __name__ == '__main__':
-    logger_main = logging.getLogger("READ_DATASET")
-    logging.basicConfig(**get_config(logging.DEBUG, file_logging=False))
-    main()
-    print(end_line.__doc__)
+    logger.critical("DATA IS READ AND DIALOGS ARE CREATED.")

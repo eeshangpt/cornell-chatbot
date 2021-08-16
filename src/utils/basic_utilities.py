@@ -1,5 +1,12 @@
 import logging
 from datetime import datetime
+from os import getcwd
+from os.path import join, dirname
+
+PROJECT_DIR = dirname(getcwd())
+DATA_DIR = join(PROJECT_DIR, 'data')
+DATA_SET_DIR = join(DATA_DIR, 'cornell movie-dialogs corpus')
+EMBEDDING_DIR = join(PROJECT_DIR, 'glove_embedding')
 
 
 def get_unique_file_name():

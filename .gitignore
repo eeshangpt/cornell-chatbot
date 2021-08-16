@@ -5,3 +5,4 @@
 **/*.pkl
 **/glove_embedding/
 **/data/
+**/__pycache__/
