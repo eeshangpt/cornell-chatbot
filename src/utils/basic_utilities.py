@@ -2,19 +2,22 @@ import logging
 from datetime import datetime
 from os import getcwd
 from os.path import join, dirname
+from typing import Dict, List
 
 PROJECT_DIR = dirname(getcwd())
 DATA_DIR = join(PROJECT_DIR, 'data')
 DATA_SET_DIR = join(DATA_DIR, 'cornell movie-dialogs corpus')
 EMBEDDING_DIR = join(PROJECT_DIR, 'glove_embedding')
+LOG_DIR = join(PROJECT_DIR, "logs")
 
 
-def get_unique_file_name():
+def get_unique_file_name() -> str:
     """
     Method returns TimeStamp as a string.
     """
     a = datetime.now()
-    return str(a.year) + "_" + str(a.month) + "_" + str(a.day) + "_" + str(a.hour) + "_" + str(a.minute)
+    return str(a.year) + "_" + str(a.month) + "_" + str(a.day) + "_" + str(a.hour) + "_" + str(a.minute) + \
+           "_" + str(a.second)
 
 
 def end_line():
@@ -26,7 +29,7 @@ def end_line():
     pass
 
 
-def get_handlers(file_logging=True, filename='', stop_stream_logs=False):
+def get_handlers(file_logging: bool = True, filename: str = '', stop_stream_logs: bool = False) -> List:
     """
     """
 
@@ -34,12 +37,15 @@ def get_handlers(file_logging=True, filename='', stop_stream_logs=False):
     if not stop_stream_logs:
         handlers.append(logging.StreamHandler())
     if file_logging and (filename != ''):
-        handlers.append(logging.FileHandler("D:\\Projects\\CombinedClassification\\logs\\{}.log".format("_".join([
-            get_unique_file_name(), filename]))))
+        handlers.append(logging.FileHandler(join(LOG_DIR, "{}.log".format("_".join([
+            filename,
+            get_unique_file_name(),
+        ])))))
     return handlers
 
 
-def get_config(level=logging.DEBUG, file_logging=True, filename='', stop_stream_logging=False):
+def get_config(level: int = logging.DEBUG, file_logging: bool = True, filename: str = '',
+               stop_stream_logging: bool = False) -> Dict:
     """
     """
     if file_logging:

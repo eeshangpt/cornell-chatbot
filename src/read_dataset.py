@@ -1,7 +1,7 @@
 import pickle
 from os import walk
 from os.path import isfile
-from typing import List, Dict, Tuple
+from typing import Tuple
 
 import pandas as pd
 from tqdm import tqdm
@@ -98,10 +98,8 @@ def __write_dialog_files(dialog: List, dialog_file_path: str, reply_dialog: List
     logger_.debug("Staring the writing process...")
     for d, r in tqdm(zip(dialog, reply_dialog)):
         if d is not None and r is not None:
-            dialog_file.write(d)
-            reply_file.write(r)
-        # else:
-        #     logger.warning("Either `from` and `to` is None.")
+            dialog_file.writelines(d + "\n")
+            reply_file.write(r + "\n")
 
     logger.info("File writing completed.")
     dialog_file.close()
