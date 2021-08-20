@@ -4,11 +4,15 @@
 +----------------------+
 """
 from string import punctuation
+from typing import Any
+
 import nltk
+import numpy as np
 from nltk.tokenize import sent_tokenize, word_tokenize
 
 from read_dataset import read_data_and_create_dialog
 from utils.basic_utilities import *
+from utils.embedding_utilities import GloVeEmbedding
 
 nltk.download('punkt')
 
@@ -35,30 +39,42 @@ def clean_and_tokenize(line: str) -> map:
     """
     Cleaning and tokenizing driver.
     """
-    return map(lambda sent: [__cleaning_punctuations(word) for word in sent if len(word) > 0], __tokenize(line))
+    # return map(lambda sent: [__cleaning_punctuations(word) for word in sent if len(word) > 0], __tokenize(line))
+    return map(lambda sent: [word for word in sent if len(word) > 0], __tokenize(line))
 
 
 def main(logger_main_: logging.Logger) -> None:
     logger = logger_main_.getChild("main")
     logger.info("Starting Encoding ")
 
+    logger.info("Initializing Embedding Objects.")
+    embedding = GloVeEmbedding(embedding_dir=EMBEDDING_DIR, default_dim_index=2)
+
     dialogs_file = open(join(DATA_DIR, "dialog.from"))
     replies_file = open(join(DATA_DIR, "dialog.to"))
     for itr, dialogs in enumerate(zip(dialogs_file, replies_file)):
-        logger.debug(f"\n~~>{dialogs[0].strip()}\n~~>{dialogs[1].strip()}\n")
+        # logger.debug(f"\n~~>{dialogs[0].strip()}\n~~>{dialogs[1].strip()}\n")
 
-        # a = map(clean_and_tokenize, dialogs)
-        line_tokens = clean_and_tokenize(dialogs[0])
-        reply_line_tokens = clean_and_tokenize(dialogs[1])
-        logger.debug(f"\n~~> {[i for i in line_tokens]}\n~~> {[i for i in reply_line_tokens]}\n")
+        # line_tokens = list(clean_and_tokenize(dialogs[0]))
+        # reply_line_tokens = list(clean_and_tokenize(dialogs[1]))
+        line = get_encoded_dialog(embedding, list(clean_and_tokenize(dialogs[0])))
+        reply_line = get_encoded_dialog(embedding, list(clean_and_tokenize(dialogs[1])))
+        # logger.debug(f"\n~~> {line}\n~~> {reply_line}\n")
 
-        if (itr + 1) % 1 == 0:
-            break
+        # if (itr + 1) % 1 == 0:
+        #     break
 
     dialogs_file.close()
     replies_file.close()
 
     return None
+
+
+def get_encoded_dialog(embedding: GloVeEmbedding, tokens: List):
+    """
+    Encode the dialog.
+    """
+    return ["<START>"] + [embedding.get(token) for sent in tokens for token in sent] + ["<END>"]
 
 
 if __name__ == '__main__':
