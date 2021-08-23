@@ -55,13 +55,17 @@ def get_encoded_dialogs(logger_main_: logging.Logger) -> List:
     logger.info("Initializing Embedding Objects.")
     embedding = GloVeEmbedding(embedding_dir=EMBEDDING_DIR, default_dim_index=2)
 
+    logger.debug("Reading files.")
     dialogs_file = open(join(DATA_DIR, "dialog.from"))
     replies_file = open(join(DATA_DIR, "dialog.to"))
 
+    logger.info("Start of encoding...")
     dialogs = [(get_encoded_dialog(embedding, list(clean_and_tokenize(dialogs[0]))),
                 get_encoded_dialog(embedding, list(clean_and_tokenize(dialogs[1]))))
                for dialogs in zip(dialogs_file, replies_file)]
+    logger.info("Encoding completed.")
 
+    logger.debug("Closing files.")
     dialogs_file.close()
     replies_file.close()
 
