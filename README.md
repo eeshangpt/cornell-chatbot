@@ -17,3 +17,6 @@ In order to replicate this project, please follow the below steps. I will update
 `unzip glove.twitter.27B.zip` <br/>
 `cd ..` <br/>
 
+## Creating `log` directory
+
+`mkdir logs`
