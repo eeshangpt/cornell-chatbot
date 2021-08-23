@@ -57,6 +57,7 @@ def get_encoded_dialogs(logger_main_: logging.Logger) -> List:
 
     dialogs_file = open(join(DATA_DIR, "dialog.from"))
     replies_file = open(join(DATA_DIR, "dialog.to"))
+
     dialogs = [(get_encoded_dialog(embedding, list(clean_and_tokenize(dialogs[0]))),
                 get_encoded_dialog(embedding, list(clean_and_tokenize(dialogs[1]))))
                for dialogs in zip(dialogs_file, replies_file)]
@@ -65,14 +66,3 @@ def get_encoded_dialogs(logger_main_: logging.Logger) -> List:
     replies_file.close()
 
     return dialogs
-
-
-if __name__ == '__main__':
-    logger_main = logging.getLogger("ENCODE_DIALOGS")
-    logging.basicConfig(**get_config(logging.DEBUG,
-                                     # file_logging=True, filename="encode-dialog",
-                                     stop_stream_logging=False))
-    logger_main.critical(__doc__)
-    read_data_and_create_dialog(logger_main)
-    get_encoded_dialogs(logger_main)
-    logger_main.critical(end_line.__doc__)
