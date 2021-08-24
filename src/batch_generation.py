@@ -5,13 +5,18 @@
 """
 import pickle
 from os.path import isfile
+from typing import Tuple
+
+import tensorflow as tf
 
 from encode_dialogs import get_encoded_dialogs
 from read_dataset import read_data_and_create_dialog
 from utils.basic_utilities import *
 
+BATCH_SIZE = 64
 
-def __get_encoded_dialog_to_process(logger_: logging.Logger) -> List:
+
+def __get_encoded_dialog_to_process(logger_: logging.Logger, batch_size: int = BATCH_SIZE) -> Tuple[List, List]:
     """
     Fetches dialogs from the files and pickles it. If the pickle is already present, returns the object.
     """
@@ -22,28 +27,36 @@ def __get_encoded_dialog_to_process(logger_: logging.Logger) -> List:
         assert not isfile(pickled_encoded_dialog_file)
         logger.warning("File not found.")
         logger.info("Creating object")
-        encoded_dialogs = get_encoded_dialogs(logger)
-
+        encoded_dialogs, encoded_replies = get_encoded_dialogs(logger)
         logger.info("Pickling file for future use.")
         with open(pickled_encoded_dialog_file, 'wb') as f:
-            pickle.dump(encoded_dialogs, f)
+            pickle.dump((encoded_dialogs, encoded_replies), f)
     except AssertionError:
         logger.info("File found. Reading object.")
         with open(pickled_encoded_dialog_file, 'rb') as f:
-            encoded_dialogs = pickle.load(f)
-    return encoded_dialogs
+            encoded_dialogs, encoded_replies = pickle.load(f)
+
+    dialogs, replies = [], []
+    for itr, (d, r) in enumerate(zip(encoded_dialogs, encoded_replies)):
+        if itr % batch_size == 0:
+            if itr != 0:
+                logger.debug(f"Yielding batch of sizes: ({len(dialogs)}, {len(replies)})...")
+                yield dialogs, replies
+            dialogs, replies = [], []
+        dialogs.append(d)
+        replies.append(r)
 
 
 def driver(logger_main_: logging.Logger) -> None:
     """
     Drives the current logic.
     """
-    logger = logger_main_.getChild("main")
+    logger = logger_main_.getChild("driver")
     read_data_and_create_dialog(logger)
 
-    encoded_dialogs = __get_encoded_dialog_to_process(logger)
-    logger.debug(f"{len(encoded_dialogs)} dialogs found.")
-
+    dataset = __get_encoded_dialog_to_process(logger)
+    for i, j in dataset:
+        logger.debug(f"dialog_batch_size: {len(i)}, reply_batch_size: {len(j)}")
     return None
 
 

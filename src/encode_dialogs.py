@@ -4,6 +4,7 @@
 +----------------------+
 """
 from string import punctuation
+from typing import Tuple
 
 import nltk
 from nltk.tokenize import sent_tokenize, word_tokenize
@@ -48,7 +49,7 @@ def get_encoded_dialog(embedding: GloVeEmbedding, tokens: List):
     return ["<START>"] + [embedding.get(token) for sent in tokens for token in sent] + ["<END>"]
 
 
-def get_encoded_dialogs(logger_main_: logging.Logger) -> List:
+def get_encoded_dialogs(logger_main_: logging.Logger) -> Tuple[List, List]:
     logger = logger_main_.getChild("main")
     logger.info("Starting Encoding ")
 
@@ -60,13 +61,18 @@ def get_encoded_dialogs(logger_main_: logging.Logger) -> List:
     replies_file = open(join(DATA_DIR, "dialog.to"))
 
     logger.info("Start of encoding...")
-    dialogs = [(get_encoded_dialog(embedding, list(clean_and_tokenize(dialogs[0]))),
-                get_encoded_dialog(embedding, list(clean_and_tokenize(dialogs[1]))))
-               for dialogs in zip(dialogs_file, replies_file)]
+    logger.debug("Encoding first dialogs...")
+    dialogs = [get_encoded_dialog(embedding, list(clean_and_tokenize(dialog)))
+               for dialog in dialogs_file]
+    logger.debug("Encoding first dialogs completed.")
+    logger.debug("Encoding reply dialogs...")
+    replies = [get_encoded_dialog(embedding, list(clean_and_tokenize(dialog)))
+               for dialog in replies_file]
+    logger.debug("Encoding reply dialogs completed.")
     logger.info("Encoding completed.")
 
     logger.debug("Closing files.")
     dialogs_file.close()
     replies_file.close()
 
-    return dialogs
+    return dialogs, replies
