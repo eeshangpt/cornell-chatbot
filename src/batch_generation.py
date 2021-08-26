@@ -7,16 +7,13 @@ import pickle
 from os.path import isfile
 from typing import Tuple
 
-import tensorflow as tf
-
 from encode_dialogs import get_encoded_dialogs
-from read_dataset import read_data_and_create_dialog
 from utils.basic_utilities import *
 
 BATCH_SIZE = 64
 
 
-def __get_encoded_dialog_to_process(logger_: logging.Logger, batch_size: int = BATCH_SIZE) -> Tuple[List, List]:
+def get_encoded_dialog_to_process(logger_: logging.Logger, batch_size: int = BATCH_SIZE) -> Tuple[List, List]:
     """
     Fetches dialogs from the files and pickles it. If the pickle is already present, returns the object.
     """
@@ -46,26 +43,23 @@ def __get_encoded_dialog_to_process(logger_: logging.Logger, batch_size: int = B
         dialogs.append(d)
         replies.append(r)
 
-
-def driver(logger_main_: logging.Logger) -> None:
-    """
-    Drives the current logic.
-    """
-    logger = logger_main_.getChild("driver")
-    read_data_and_create_dialog(logger)
-
-    dataset = __get_encoded_dialog_to_process(logger)
-    for i, j in dataset:
-        logger.debug(f"dialog_batch_size: {len(i)}, reply_batch_size: {len(j)}")
-    return None
-
-
-if __name__ == '__main__':
-    logger_main = logging.getLogger("BATCH_GENERATION")
-    logging.basicConfig(**get_config(logging.DEBUG,
-                                     file_logging=False,
-                                     # filename="batch-generation",
-                                     stop_stream_logging=False))
-    logger_main.critical(__doc__)
-    driver(logger_main)
-    logger_main.critical(end_line.__doc__)
+# def driver(logger_main_: logging.Logger) -> None:
+#     """
+#     Drives the current logic.
+#     """
+#     logger = logger_main_.getChild("driver")
+#     read_data_and_create_dialog(logger)
+#
+#     dataset = get_encoded_dialog_to_process(logger)
+#     for i, j in dataset:
+#         logger.debug(f"dialog_batch_size: {len(i)}, reply_batch_size: {len(j)}")
+#     return None
+# if __name__ == '__main__':
+#     logger_main = logging.getLogger("BATCH_GENERATION")
+#     logging.basicConfig(**get_config(logging.DEBUG,
+#                                      file_logging=False,
+#                                      # filename="batch-generation",
+#                                      stop_stream_logging=False))
+#     logger_main.critical(__doc__)
+#     driver(logger_main)
+#     logger_main.critical(end_line.__doc__)
