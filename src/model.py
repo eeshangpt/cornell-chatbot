@@ -1,5 +1,8 @@
-import logging
-
+"""
++-------------+
+|    MODEL    |
++-------------+
+"""
 from encode_dialogs import get_encoded_dialogs
 from read_dataset import read_data_and_create_dialog
 from utils.basic_utilities import *
