@@ -70,7 +70,7 @@ def __create_dialogs_replies(conversations: pd.Series, lines: pd.DataFrame, outp
     """
     logger_ = logger.getChild("__create_dialogs_replies")
     try:
-        logger_.info("Attempting to read the pickle of dialogs and thier replies.")
+        logger_.info("Attempting to read the pickle of dialogs and their replies.")
         assert isfile(output_pickle_file)
         with open(output_pickle_file, 'rb') as f:
             dialog, reply_dialog = pickle.load(f)
