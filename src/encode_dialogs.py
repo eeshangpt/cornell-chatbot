@@ -4,16 +4,23 @@
 +----------------------+
 """
 import re
+from os.path import isfile
+from pickle import dump, load
 from string import punctuation
+from timeit import default_timer as timer
 from typing import Tuple
 
 import nltk
 from nltk.tokenize import sent_tokenize, word_tokenize
 
+from src.read_dataset import read_data_and_create_dialog
 from utils.basic_utilities import *
 from utils.embedding_utilities import GloVeEmbedding
 
 nltk.download('punkt')
+
+DIALOG_FROM_PCSD_PICKLE = join(DATA_DIR, "dialog.from.processed.pkl")
+DIALOG_TO_PCSD_PICKLE = join(DATA_DIR, "dialog.to.processed.pkl")
 
 
 def __tokenize(line: str) -> List:
@@ -104,4 +111,33 @@ def get_encoded_dialogs(logger_main_: logging.Logger) -> Tuple[List, List]:
     dialogs_file.close()
     replies_file.close()
 
+    return dialogs, replies
+
+
+def get_dialogs(logger_: logging.Logger) -> Tuple[List, List]:
+    """
+    Fetches the preprocessed dialogs and their replies .
+    """
+    logger = logger_.getChild("__get_dialogs")
+    logger.info("Attempting to read pickles of processed dialogs and replies.")
+    start = timer()
+    try:
+        assert not isfile(DIALOG_FROM_PCSD_PICKLE)
+        assert not isfile(DIALOG_TO_PCSD_PICKLE)
+        logger.debug("File not found. Therefore processing dialogs and their replies.")
+        read_data_and_create_dialog(logger)
+        dialogs, replies = get_encoded_dialogs(logger)
+        with open(DIALOG_FROM_PCSD_PICKLE, 'wb') as f:
+            dump(dialogs, f)
+        with open(DIALOG_TO_PCSD_PICKLE, 'wb') as f:
+            dump(replies, f)
+    except AssertionError:
+        logger.warning("Files already present.")
+        logger.debug("File found. Now reading them.")
+        with open(DIALOG_FROM_PCSD_PICKLE, 'rb') as f:
+            dialogs = load(f)
+        with open(DIALOG_TO_PCSD_PICKLE, 'rb') as f:
+            replies = load(f)
+        logger.info("Files read successfully.")
+    logger.debug(f"Dialogs found in {timer() - start} seconds.")
     return dialogs, replies
