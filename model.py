@@ -7,10 +7,15 @@ from timeit import default_timer as timer
 from typing import Tuple
 
 import numpy as np
-from tensorflow.keras.layers import Embedding
+from tensorflow.keras import Model
+from tensorflow.keras.activations import softmax
+from tensorflow.keras.layers import Dense, Embedding, Input, LSTM
+from tensorflow.keras.optimizers import RMSprop
+from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.utils import to_categorical
 
-from src.encode_dialogs import get_dialogs
+from encode_dialogs import get_dialogs
 from utils.basic_utilities import *
 from utils.embedding_utilities import GloVeEmbedding
 
@@ -51,6 +56,8 @@ def driver(logger_main_: logging.Logger) -> None:
     """
     logger = logger_main_.getChild("driver")
     dialogs, replies = get_dialogs(logger)
+    dialogs = dialogs[:2000]
+    replies = replies[:2000]
     logger.debug(f"Length of 'DIALOGS': {len(dialogs)}")
     logger.debug(f"Length of 'REPLIES' :{len(replies)}")
 
@@ -58,10 +65,24 @@ def driver(logger_main_: logging.Logger) -> None:
     word2idx = tokenizer.word_index
     idx2word = {v: k for k, v in word2idx.items()}
 
+    logger.debug("Encoding the dialogs and thier replies...")
+    encoded_dialogs = tokenizer.texts_to_sequences(dialogs)
+    encoded_replies = tokenizer.texts_to_sequences(replies)
+    max_len_dialog = np.max([len(_) for _ in encoded_replies + encoded_dialogs])
+
     logger.info("Initializing embedding...")
     embedder = GloVeEmbedding()
 
     embed_matrix, embed_vector_len, vocab_length = get_embedding_matrix(embedder, logger, word2idx)
+
+    logger.debug(f"Padding to equalize to length of {max_len_dialog}...")
+    encoder_dialogs_padded = np.array(pad_sequences(encoded_dialogs, maxlen=max_len_dialog, padding='post'))
+    encoder_replies_padded = np.array(pad_sequences(encoded_replies, maxlen=max_len_dialog, padding='post'))
+    onehot_replies = to_categorical(encoder_replies_padded, vocab_length)
+    decoder_ops = np.array(onehot_replies)
+    logger.debug(f"Shape of padded dialogs = {encoder_dialogs_padded.shape}")
+    logger.debug(f"Shape of padded replies = {encoder_replies_padded.shape}")
+    logger.debug(f"Shape of padded replies = {decoder_ops.shape}")
 
     logger.info("Creating a Embedding Layer.")
     max_len = 150
@@ -71,8 +92,24 @@ def driver(logger_main_: logging.Logger) -> None:
 
     logger.info("Creating Model...")
     start = timer()
+    encoder_input = Input(shape=(None,))
+    encoder_embedding = embedding_layer(encoder_input)
+    encoder_output, state_h, state_c = LSTM(200, return_state=True)(encoder_embedding)
+    encoder_states = [state_h, state_c]
+
+    decoder_input = Input(shape=(None,))
+    decoder_embedding = embedding_layer(decoder_input)
+    decoder_lstm = LSTM(200, return_state=True, return_sequences=True)
+    decoder_replies, _, _ = decoder_lstm(decoder_embedding, initial_state=encoder_states)
+    decoder_dense = Dense(vocab_length, activation=softmax)
+    output = decoder_dense(decoder_replies)
+
+    model = Model([encoder_input, decoder_input], output)
+    model.compile(optimizer=RMSprop(), loss='categorical_crossentropy')
     logger.debug(f"Time taken to create a model is {timer() - start} seconds.")
 
+    model.summary()
+    model.fit([encoder_dialogs_padded, encoder_replies_padded], decoder_ops, batch_size=50, epochs=10)
     return None
 
 

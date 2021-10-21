@@ -13,7 +13,7 @@ from typing import Tuple
 import nltk
 from nltk.tokenize import sent_tokenize, word_tokenize
 
-from src.read_dataset import read_data_and_create_dialog
+from read_dataset import read_data_and_create_dialog
 from utils.basic_utilities import *
 from utils.embedding_utilities import GloVeEmbedding
 

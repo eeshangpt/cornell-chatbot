@@ -4,7 +4,7 @@ from os import getcwd
 from os.path import join, dirname
 from typing import Dict, List
 
-PROJECT_DIR = dirname(getcwd())
+PROJECT_DIR = getcwd()
 DATA_DIR = join(PROJECT_DIR, 'data')
 DATA_SET_DIR = join(DATA_DIR, 'cornell movie-dialogs corpus')
 EMBEDDING_DIR = join(PROJECT_DIR, 'glove_embedding')
