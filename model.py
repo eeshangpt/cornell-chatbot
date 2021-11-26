@@ -50,14 +50,32 @@ def get_embedding_matrix(embedder: GloVeEmbedding, logger_: logging.Logger,
     return embed_matrix, embed_vector_len, vocab_length
 
 
+def inference_models(decoder_dense, decoder_embedding, decoder_input,
+                     decoder_lstm, encoder_input, encoder_states):
+    encoder_model = Model(encoder_input, encoder_states)
+    decoder_state_input_h = Input(shape=(200,))
+    decoder_state_input_c = Input(shape=(200,))
+    decoder_states_input = [decoder_state_input_h, decoder_state_input_c]
+    decoder_outputs, state_h, state_c = decoder_lstm(decoder_embedding, initial_state=decoder_states_input)
+    decoder_states = [state_h, state_c]
+    decoder_outputs = decoder_dense(decoder_outputs)
+    decoder_model = Model([decoder_input] + decoder_states_input, [decoder_outputs] + decoder_states)
+    return decoder_model, encoder_model
+
+
+def str_to_tokens(tokenizer: Tokenizer, sentence: str, max_len_dialog: int) -> np.ndarray:
+    tokens_list = [tokenizer.word_index[word] for word in sentence.lower().split()]
+    return pad_sequences([tokens_list], maxlen=max_len_dialog, padding='post')
+
+
 def driver(logger_main_: logging.Logger) -> None:
     """
     Driver.
     """
     logger = logger_main_.getChild("driver")
     dialogs, replies = get_dialogs(logger)
-    dialogs = dialogs[:2000]
-    replies = replies[:2000]
+    dialogs = dialogs[:1500]
+    replies = replies[:1500]
     logger.debug(f"Length of 'DIALOGS': {len(dialogs)}")
     logger.debug(f"Length of 'REPLIES' :{len(replies)}")
 
@@ -89,9 +107,9 @@ def driver(logger_main_: logging.Logger) -> None:
     embedding_layer = Embedding(input_dim=vocab_length, output_dim=embed_vector_len,
                                 input_length=max_len, weights=[embed_matrix],
                                 trainable=False)
-
-    logger.info("Creating Model...")
+    logger.info("Creating Training Model...")
     start = timer()
+
     encoder_input = Input(shape=(None,))
     encoder_embedding = embedding_layer(encoder_input)
     encoder_output, state_h, state_c = LSTM(200, return_state=True)(encoder_embedding)
@@ -103,21 +121,53 @@ def driver(logger_main_: logging.Logger) -> None:
     decoder_replies, _, _ = decoder_lstm(decoder_embedding, initial_state=encoder_states)
     decoder_dense = Dense(vocab_length, activation=softmax)
     output = decoder_dense(decoder_replies)
-
     model = Model([encoder_input, decoder_input], output)
-    model.compile(optimizer=RMSprop(), loss='categorical_crossentropy')
+    model.compile(optimizer=RMSprop(), loss='categorical_crossentropy', metrics=['accuracy'])
     logger.debug(f"Time taken to create a model is {timer() - start} seconds.")
 
     model.summary()
-    model.fit([encoder_dialogs_padded, encoder_replies_padded], decoder_ops, batch_size=50, epochs=10)
+    model.fit([encoder_dialogs_padded, encoder_replies_padded], decoder_ops, batch_size=50, epochs=50)
+
+    logger.info("Creating Infernece Model...")
+    start = timer()
+    decoder_model, encoder_model = inference_models(decoder_dense, decoder_embedding, decoder_input, decoder_lstm,
+                                                    encoder_input, encoder_states)
+    logger.debug(f"Time taken to create an inference model is {timer() - start} seconds.")
+    for _ in range(10):
+        states_values = encoder_model.predict(str_to_tokens(tokenizer, input(">>> "), max_len_dialog))
+        empty_target_seq = np.zeros((1, 1))
+        empty_target_seq[0, 0] = tokenizer.word_index['start']
+        stop_condition = False
+        decoded_translation = ''
+        logger.info("Generating a reply...")
+        start = timer()
+        while not stop_condition:
+            dec_ops, h, c = decoder_model.predict([empty_target_seq] + states_values)
+            sampled_word_index = np.argmax(dec_ops[0, -1, :])
+            sampled_word = None
+            try:
+                word = idx2word[sampled_word_index]
+                decoded_translation += f" {word}"
+                sampled_word = word
+            except KeyError:
+                pass
+
+            if sampled_word == 'end' or len(decoded_translation.split()) > max_len_dialog:
+                stop_condition = True
+            logger.debug(f"{decoded_translation}")
+            empty_target_seq = np.zeros((1, 1))
+            empty_target_seq[0, 0] = sampled_word_index
+            states_values = [h, c]
+        logger.debug(f"Time taken to generate a reply is {timer() - start} seconds.")
+        print(f"reply>>> {decoded_translation}")
+
     return None
 
 
 if __name__ == '__main__':
     logger_main = logging.Logger("MODEL")
     logging.basicConfig(**get_config(logging.DEBUG,
-                                     file_logging=False,
-                                     # filename="batch-generation",
+                                     file_logging=False,  # filename="batch-generation",
                                      stop_stream_logging=False))
     logger_main.critical(__doc__)
     driver(logger_main)
