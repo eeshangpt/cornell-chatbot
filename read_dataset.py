@@ -112,7 +112,7 @@ def read_data_and_create_dialog(logger_main: logging.Logger):
     """
     logger = logger_main.getChild("read_data_and_create_dialog")
     logger.info("Reading the directory.")
-    root, dirs, files = list(walk(DATA_SET_DIR))[0]
+    root, dirs, files = list(walk(DATA_SET_DIR))# [0]
     logger.info("Separating the useful file.")
     data_files = {file: join(DATA_SET_DIR, file) for file in files if "movie" in file}
     logger.info("Creating DataFrame and selecting the conversations.")
