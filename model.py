@@ -164,11 +164,11 @@ def driver(logger_main_: logging.Logger) -> None:
     return None
 
 
-if __name__ == '__main__':
-    logger_main = logging.Logger("MODEL")
-    logging.basicConfig(**get_config(logging.DEBUG,
-                                     file_logging=False,  # filename="batch-generation",
-                                     stop_stream_logging=False))
-    logger_main.critical(__doc__)
-    driver(logger_main)
-    logger_main.critical(end_line.__doc__)
+# if __name__ == '__main__':
+#     logger_main = logging.Logger("MODEL")
+#     logging.basicConfig(**get_config(logging.DEBUG,
+#                                      file_logging=False,  # filename="batch-generation",
+#                                      stop_stream_logging=False))
+#     logger_main.critical(__doc__)
+#     driver(logger_main)
+#     logger_main.critical(end_line.__doc__)

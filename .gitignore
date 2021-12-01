@@ -1,5 +1,4 @@
 .idea/
-.ipynb_checkpoint/
 **/docs/
 **/*.zip
 **/*.pkl
@@ -8,3 +7,4 @@
 **/__pycache__/
 **/logs/
 **/venv/
+**/.ipynb_checkpoints
